@@ -3,6 +3,7 @@ import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 import axios from "axios";
+import personServices from './services/persons'
 
 const App = () => {
   const [persons, setPersons] = useState([
@@ -12,8 +13,12 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [show, setShow] = useState("");
   useEffect(() => {
-    axios.get('http://localhost:3001/persons')
-      .then(responses => { setPersons(responses.data) })
+    personServices
+      .getAll()
+      .then(initialPersons => {
+        console.log(initialPersons)
+        setPersons(initialPersons)
+      })
   }, [])
 
   const handleSubmit = (event) => {
@@ -21,19 +26,50 @@ const App = () => {
     const newObject = {
       name: newName,
       number: newNumber,
-      id: persons.length + 1,
     };
 
-    if (persons.some((person) => person.name === newObject.name)) {
-      alert(`${newName} already exists`);
+    const existingPerson = persons.find((person) => person.name === newObject.name);
+
+    if (existingPerson) {
+      let confirmed = window.confirm(
+        `${newName} is already added to phonebook, replace the old number with a new one?`
+      );
+      if (confirmed) {
+        const updatedPerson = { ...existingPerson, number: newObject.number };
+        personServices.update(existingPerson.id, updatedPerson).then((returnedPerson) => {
+          setPersons(
+            persons.map((person) =>
+              person.id !== existingPerson.id ? person : returnedPerson
+            )
+          );
+        });
+      }
     } else {
-      setPersons(persons.concat(newObject));
+      // Create a new contact if not existing
+      personServices.create(newObject).then((returnedPerson) => {
+        setPersons(persons.concat(returnedPerson));
+      });
     }
 
+    // Clear input fields after submission
     setNewName("");
     setNewNumber("");
   };
 
+  const handleDelete = (id) => {
+    const personToDelete = persons.find(person => person.id === id);
+    if (!personToDelete) return;
+    const confirmDelete = window.confirm(`Delete ${personToDelete.name}`)
+    if (!confirmDelete) return;
+
+    personServices
+      .remove(id)
+      .then(() => { setPersons(persons.filter(person => person.id !== id)) })
+      .catch((error) => {
+        console.error("Error deleting person:", error);
+        alert("Person is already deleted or an error occurred.");
+      });
+  }
   return (
     <div>
       <h2>Phonebook</h2>
@@ -47,7 +83,7 @@ const App = () => {
       />
       <h2>Numbers</h2>
 
-      <Persons persons={persons} show={show} />
+      <Persons persons={persons} show={show} handleDelete={handleDelete} />
     </div>
   );
 };
