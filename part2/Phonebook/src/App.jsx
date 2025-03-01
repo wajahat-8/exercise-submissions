@@ -4,14 +4,16 @@ import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
 import axios from "axios";
 import personServices from './services/persons'
+import Notification from "./components/Notification";
 
 const App = () => {
-  const [persons, setPersons] = useState([
-  ])
+  const [persons, setPersons] = useState([])
 
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [show, setShow] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [notificationType, setNotificationType] = useState("");
   useEffect(() => {
     personServices
       .getAll()
@@ -20,6 +22,7 @@ const App = () => {
         setPersons(initialPersons)
       })
   }, [])
+
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -45,17 +48,27 @@ const App = () => {
         });
       }
     } else {
-      // Create a new contact if not existing
+
       personServices.create(newObject).then((returnedPerson) => {
         setPersons(persons.concat(returnedPerson));
       });
     }
 
-    // Clear input fields after submission
     setNewName("");
     setNewNumber("");
+    showMessage(`Added ${newObject.name}`, 'succes')
   };
-
+  const showMessage = (message, type) => {
+    setNotification(
+      message
+    )
+    setNotificationType(type)
+    setTimeout(() => {
+      console.log("hi")
+      setNotification(null)
+      setNotificationType("");
+    }, 5000)
+  }
   const handleDelete = (id) => {
     const personToDelete = persons.find(person => person.id === id);
     if (!personToDelete) return;
@@ -66,13 +79,14 @@ const App = () => {
       .remove(id)
       .then(() => { setPersons(persons.filter(person => person.id !== id)) })
       .catch((error) => {
-        console.error("Error deleting person:", error);
-        alert("Person is already deleted or an error occurred.");
+
+        showMessage(`Information of ${personToDelete.name} has  already been removed from server`, 'error');
       });
   }
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification notification={notification} type={notificationType} />
       <Filter show={show} setShow={setShow} />
       <PersonForm
         newName={newName}
