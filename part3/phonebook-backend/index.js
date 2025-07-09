@@ -1,6 +1,16 @@
-const express = require('express')
+const express = require('express');
+const morgan = require('morgan');
+// const cors = require('cors');
+
 const app = express()
 app.use(express.json());
+app.use(express.static('dist'))
+// app.use(cors());
+morgan.token('post-data', (req) => {
+    return req.method === 'POST' ? JSON.stringify(req.body) : ''
+})
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post-data'))
+
 let persons = [
     {
         "id": "1",
@@ -23,6 +33,7 @@ let persons = [
         "number": "39-23-6423122"
     }
 ]
+
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
@@ -46,6 +57,7 @@ app.delete('/api/persons/:id', (request, response) => {
     persons = persons.filter(person => person.id !== id);
     response.json(persons)
 })
+
 app.post('/api/persons', (request, response) => {
     const randomId = Math.floor(Math.random() * 1000000000000);
     const body = request.body
@@ -67,7 +79,7 @@ app.post('/api/persons', (request, response) => {
         number: body.number
     }
     persons = persons.concat(person)
-    response.json(persons)
+    response.json(person)
 })
 const PORT = 3001
 app.listen(PORT, () => {
