@@ -1,4 +1,7 @@
+require('dotenv').config()
 const express = require('express');
+
+const Person = require('./models/person')
 const morgan = require('morgan');
 // const cors = require('cors');
 
@@ -39,7 +42,14 @@ app.get('/', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({})
+        .then(person => {
+            response.json(person)
+        })
+        .catch(error => {
+            console.error('Error fetching persons:', error)
+            response.status(500).json({ error: 'DB query failed' })
+        })
 })
 app.get('/info', (request, response) => {
     response.send(`<p>Phonebook has info for 2 people</p><br>
@@ -59,27 +69,35 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.post('/api/persons', (request, response) => {
-    const randomId = Math.floor(Math.random() * 1000000000000);
+    // const randomId = Math.floor(Math.random() * 1000000000000);
     const body = request.body
-    const newName = body.name
-    const nameExist = persons.find(person => person.name === newName);
-
     if (!body.name || !body.number) {
-        return response.status(400).json({
-            error: 'something is  missing'
 
-        })
+        return response.status(400).json({ error: 'content missing' })
     }
-    if (nameExist) {
-        return response.status(400).json({ error: 'Name already exist' })
-    }
-    const person = {
-        id: randomId,
+
+    // const nameExist = persons.find(person => person.name === newName);
+
+    // if (!body.name || !body.number) {
+    //     return response.status(400).json({
+    //         error: 'something is  missing'
+
+    //     })
+    // }
+    // if (nameExist) {
+    //     return response.status(400).json({ error: 'Name already exist' })
+    // }
+    const person = new Person({
+
         name: body.name,
         number: body.number
-    }
-    persons = persons.concat(person)
-    response.json(person)
+    })
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    }).catch(error => {
+        console.error('Error saving person:', error);
+        response.status(500).json({ error: 'could not save to DB' });
+    });
 })
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
