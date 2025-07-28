@@ -58,14 +58,47 @@ app.get('/info', (request, response) => {
         `)
 })
 app.get('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    const person = persons.find(person => person.id === id)
-    response.json(person)
+    Person.findById(request.params.id)
+        .then(person => {
+            if (person) {
+                response.json(person)
+            } else {
+                response.status(404).end
+            }
+        })
+        .catch(error => (next(error)))
 })
+app.put('/api/persons/:id', (request, response, next) => {
+    const { name, number } = request.body;
+
+    if (!name || !number) {
+        return response.status(400).json({ error: 'name or number missing' });
+    }
+
+    Person.findByIdAndUpdate(
+        request.params.id,
+        { name, number }
+    )
+        .then(updatedPerson => {
+            if (updatedPerson) {
+                response.json(updatedPerson);
+            } else {
+                response.status(404).end(); // If no person found
+            }
+        })
+        .catch(error => next(error)); // For invalid IDs, etc.
+});
+
+
+
+
+
 app.delete('/api/persons/:id', (request, response) => {
-    const id = request.params.id;
-    persons = persons.filter(person => person.id !== id);
-    response.json(persons)
+    Person.findByIdAndDelete(request.params.id).then(result => {
+        response.status(204).end()
+    }
+
+    )
 })
 
 app.post('/api/persons', (request, response) => {
@@ -99,6 +132,13 @@ app.post('/api/persons', (request, response) => {
         response.status(500).json({ error: 'could not save to DB' });
     });
 })
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+    next(error)
+}
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)

@@ -1,5 +1,8 @@
 import axios from "axios";
-const baseUrl = 'http://localhost:3001/persons'
+const baseUrl = '/api/persons'; // relative path to use Vite proxy
+
+
+
 const getAll = () => {
     const request = axios.get(baseUrl);
     return request.then(response => {
