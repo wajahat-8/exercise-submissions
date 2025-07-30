@@ -45,18 +45,29 @@ const App = () => {
               person.id !== existingPerson.id ? person : returnedPerson
             )
           );
+          showMessage(`Updated ${returnedPerson.name}'s number`, 'updated');
+          setNewName("");
+          setNewNumber("");
         });
+
       }
     } else {
 
       personServices.create(newObject).then((returnedPerson) => {
         setPersons(persons.concat(returnedPerson));
-      });
+        showMessage(`Added ${returnedPerson.name}`, 'success'); // ✅ moved here
+        setNewName("");
+        setNewNumber("");
+
+      }).catch(error => {
+        if (error.response && error.response.data && error.response.data.error) {
+          showMessage(error.response.data.error, 'error');
+        }
+      })
     }
 
-    setNewName("");
-    setNewNumber("");
-    showMessage(`Added ${newObject.name}`, 'succes')
+
+
   };
   const showMessage = (message, type) => {
     setNotification(

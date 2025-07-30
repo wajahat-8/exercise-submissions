@@ -11,7 +11,10 @@ const getAll = () => {
 }
 const create = newObject => {
     const request = axios.post(baseUrl, newObject);
-    return request.then(response => response.data);
+    return request.then(response => response.data).catch(error => {
+        console.log(error.response.data.error)
+        throw error;
+    });
 }
 const update = (id, newObject) => {
     const request = axios.put(`${baseUrl}/${id}`, newObject)
